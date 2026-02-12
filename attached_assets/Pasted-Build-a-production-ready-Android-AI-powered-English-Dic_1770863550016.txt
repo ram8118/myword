@@ -1,0 +1,225 @@
+Build a production-ready Android AI-powered English Dictionary App using Kotlin and Jetpack Compose.
+
+APP NAME:
+AI English Dictionary
+
+GOAL:
+Create a modern AI-powered dictionary app that allows users to search English words using AI, view detailed meanings, save words locally, manage saved words, access search history, and hear pronunciation.
+
+====================================================
+CORE FEATURES
+====================================================
+
+1️⃣ HOME SCREEN
+
+- Top section: Rounded AI-powered search bar with AI icon.
+- User can type any English word.
+- On search:
+    - Call OpenAI API.
+    - Fetch structured JSON response.
+- Display:
+    - Word
+    - IPA phonetic spelling
+    - Part of speech
+    - Definition
+    - Example sentence
+    - Synonyms
+    - Antonyms
+    - Usage tips
+- Add:
+    - "Save Word" button
+    - Speaker icon for pronunciation (Text-to-Speech)
+- Show loading indicator while fetching.
+- Show error message if word not found.
+- Below search section:
+    - Show recent search history (last 5 searches).
+
+2️⃣ SAVED SCREEN
+
+- Bottom Navigation with:
+    - Home
+    - Saved
+- Saved screen shows:
+    - List of saved words from Room database.
+- Each list item displays:
+    - Word
+    - 1-line short definition preview
+    - Delete icon
+- On delete:
+    - Show confirmation dialog.
+- When clicking a saved word:
+    - Open WordDetailScreen.
+    - Show:
+        - Word
+        - IPA
+        - Pronunciation button
+        - Part of speech
+        - Full definition
+        - Example sentence
+        - Synonyms
+        - Antonyms
+        - Usage tips
+    - Back button returns to previous screen.
+- Show empty state message:
+    "No saved words yet"
+
+====================================================
+DATA STORAGE (ROOM DATABASE)
+====================================================
+
+Use Room Database for local persistence.
+
+WordEntity should contain:
+- word (PrimaryKey)
+- definition
+- partOfSpeech
+- example
+- ipa
+- synonyms (stored as comma-separated string)
+- antonyms (stored as comma-separated string)
+- usageTips
+- timestamp
+
+SearchHistoryEntity:
+- id (autoGenerate)
+- word
+- searchedAt
+
+Prevent duplicate word saving.
+
+Saved words must be accessible offline.
+
+====================================================
+NAVIGATION
+====================================================
+
+Use Jetpack Compose Navigation.
+
+Routes:
+- home
+- saved
+- detail/{word}
+
+Use common back button behavior.
+Use smooth animated transitions.
+
+====================================================
+ARCHITECTURE
+====================================================
+
+Use MVVM architecture.
+
+Layers:
+- UI (Compose screens)
+- ViewModel (StateFlow)
+- Repository
+- Data (Room + Retrofit)
+
+Requirements:
+- StateFlow for UI state management.
+- Repository handles:
+    - AI API call
+    - Save word
+    - Fetch saved words
+    - Delete word
+    - Store search history
+- Proper error handling.
+- Loading state.
+- Offline fallback support.
+
+====================================================
+AI INTEGRATION
+====================================================
+
+Use OpenAI API via Retrofit.
+
+Prompt format:
+
+Return JSON only in this exact format:
+{
+  "word": "",
+  "ipa": "",
+  "partOfSpeech": "",
+  "definition": "",
+  "example": "",
+  "synonyms": [],
+  "antonyms": [],
+  "usageTips": ""
+}
+
+Give meaning for the word: [WORD]
+
+Parse structured JSON safely using Kotlin serialization or Moshi.
+
+====================================================
+PRONUNCIATION FEATURE
+====================================================
+
+- Use Android TextToSpeech API.
+- Add speaker icon.
+- On click:
+    - Pronounce word in US English.
+- Release TTS properly in lifecycle.
+
+====================================================
+SEARCH HISTORY
+====================================================
+
+- Store each searched word in Room.
+- Show last 5 searches below search bar.
+- Clicking history item triggers search again.
+
+====================================================
+UI DESIGN REQUIREMENTS
+====================================================
+
+- Material 3 Design.
+- Clean and minimal UI.
+- Rounded search bar.
+- Modern cards.
+- Smooth animations.
+- Light and Dark mode support.
+- Adaptive UI.
+- Responsive layout.
+
+====================================================
+DEPENDENCY INJECTION
+====================================================
+
+Use Hilt for dependency injection.
+
+Provide:
+- Database
+- DAO
+- Repository
+- Retrofit API
+- ViewModels
+
+====================================================
+OUTPUT REQUIREMENTS
+====================================================
+
+Provide complete project structure including:
+
+- MainActivity
+- Application class (Hilt setup)
+- Navigation graph
+- HomeScreen
+- SavedScreen
+- WordDetailScreen
+- ViewModels
+- Room entities
+- DAO interfaces
+- AppDatabase
+- Repository interface + implementation
+- Retrofit API service
+- Data models
+- Hilt modules
+- TextToSpeech implementation
+- State classes
+- Error handling logic
+
+The app must be production-ready, scalable, and follow best practices.
+
+
+can i build this app using puter
