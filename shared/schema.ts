@@ -6,6 +6,7 @@ import {
   serial,
   integer,
   timestamp,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -68,14 +69,11 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export const words = pgTable("words", {
   word: text("word").primaryKey(),
   ipa: text("ipa").notNull().default(""),
-  partOfSpeech: text("part_of_speech").notNull().default(""),
-  definition: text("definition").notNull(),
-  example: text("example").notNull().default(""),
-  synonyms: text("synonyms").notNull().default(""),
-  antonyms: text("antonyms").notNull().default(""),
-  usageTips: text("usage_tips").notNull().default(""),
-  origin: text("origin").notNull().default(""),
-  translation: text("translation").notNull().default(""),
+  // New deep structure for meanings
+  meanings: jsonb("meanings").notNull().default([]),
+  phrases: jsonb("phrases").notNull().default([]),
+  originDetails: jsonb("origin_details").notNull().default({}),
+  translation: jsonb("translation").notNull().default({}),
   timestamp: timestamp("timestamp").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 

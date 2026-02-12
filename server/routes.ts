@@ -14,30 +14,42 @@ function normalizeWord(input: string) {
   return input.trim().toLowerCase();
 }
 
-function listToCsv(items: unknown): string {
-  if (!Array.isArray(items)) return "";
-  return items
-    .map((x) => String(x || "").trim())
-    .filter(Boolean)
-    .join(", ");
-}
-
 async function aiLookup(word: string) {
   const prompt =
-    `Return JSON only in this exact format:\n` +
+    `Return JSON only. Format like Google Search dictionary for "${word}". Deeply nested.\n` +
+    `Structure:\n` +
     `{
-  "word": "",
-  "ipa": "",
-  "partOfSpeech": "",
-  "definition": "",
-  "example": "",
-  "synonyms": [],
-  "antonyms": [],
-  "usageTips": "",
-  "origin": "",
-  "translation": ""
-}\n\n` +
-    `Give meaning for the word: ${word}. Include historical origin and a common Hindi translation.`;
+  "word": "at",
+  "ipa": "/æt,ət/",
+  "meanings": [
+    {
+      "partOfSpeech": "preposition",
+      "definitions": [
+        {
+          "definition": "expressing location or arrival in a particular place or position.",
+          "example": "they live at Conway House",
+          "subs": [
+            { "definition": "used in speech to indicate the sign @ in email addresses...", "example": "john@example.com" }
+          ]
+        },
+        { "definition": "expressing the time when an event takes place.", "example": "the children go to bed at nine o'clock" }
+      ],
+      "synonyms": ["near", "by", "on"],
+      "antonyms": []
+    }
+  ],
+  "phrases": [
+    { "phrase": "at that", "meaning": "in addition; furthermore.", "example": "it was not fog but smoke, and very thick at that" }
+  ],
+  "originDetails": {
+    "text": "Old English æt, of Germanic origin...",
+    "flow": ["GERMANIC", "OLD ENGLISH æt", "OLD FRISIAN et", "OLD NORSE at"]
+  },
+  "translation": {
+    "primary": "पर",
+    "others": ["बलि", "ಮೇಲೆ", "ಅಲ್ಲಿ"]
+  }
+}`;
 
   const response = await openai.chat.completions.create({
     model: "gpt-5.2",
@@ -45,30 +57,16 @@ async function aiLookup(word: string) {
       {
         role: "system",
         content:
-          "You are a dictionary mirroring Google Search's detailed dictionary format. Return strict JSON only. If the word is not a valid English word, return an empty definition string.",
+          "You are a professional lexicographer. Return comprehensive, deeply structured JSON mirroring Google's Search Dictionary. Support multiple parts of speech and complex numbering (1, 2, 3) with bulleted sub-definitions. Include many synonyms/antonyms for each part of speech.",
       },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
-    max_completion_tokens: 1000,
+    max_completion_tokens: 3000,
   } as any);
 
-  const content = response.choices?.[0]?.message?.content ?? "{}";
-  return JSON.parse(content);
+  return JSON.parse(response.choices?.[0]?.message?.content ?? "{}");
 }
-
-const aiWordSchema = z.object({
-  word: z.string().min(1),
-  ipa: z.string().optional().default(""),
-  partOfSpeech: z.string().optional().default(""),
-  definition: z.string().optional().default(""),
-  example: z.string().optional().default(""),
-  synonyms: z.array(z.string()).optional().default([]),
-  antonyms: z.array(z.string()).optional().default([]),
-  usageTips: z.string().optional().default(""),
-  origin: z.string().optional().default(""),
-  translation: z.string().optional().default(""),
-});
 
 export async function registerRoutes(
   httpServer: Server,
@@ -91,41 +89,26 @@ export async function registerRoutes(
       }
 
       const aiJson = await aiLookup(word);
-      const parsed = aiWordSchema.parse(aiJson);
-
-      if (!parsed.definition || parsed.definition.trim().length === 0) {
-        return res.status(404).json({ message: "Word not found" });
-      }
-
-      const result = {
-        word,
-        ipa: parsed.ipa ?? "",
-        partOfSpeech: parsed.partOfSpeech ?? "",
-        definition: parsed.definition ?? "",
-        example: parsed.example ?? "",
-        synonyms: listToCsv(parsed.synonyms),
-        antonyms: listToCsv(parsed.antonyms),
-        usageTips: parsed.usageTips ?? "",
-        origin: parsed.origin ?? "",
-        translation: parsed.translation ?? "",
-        timestamp: new Date(),
-      };
+      
+      // Save to storage
+      const result = await storage.saveWord({
+        word: aiJson.word || word,
+        ipa: aiJson.ipa || "",
+        meanings: aiJson.meanings || [],
+        phrases: aiJson.phrases || [],
+        originDetails: aiJson.originDetails || {},
+        translation: aiJson.translation || {},
+      });
 
       return res.json({ result, fromCache: false });
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({
-          message: err.errors[0]?.message ?? "Invalid request",
-          field: err.errors[0]?.path?.join("."),
-        });
-      }
-      throw err;
+      console.error("Lookup error:", err);
+      res.status(500).json({ message: "Lookup failed" });
     }
   });
 
   app.get(api.dictionary.saved.list.path, async (_req, res) => {
-    const items = await storage.getSavedWords();
-    res.json(items);
+    res.json(await storage.getSavedWords());
   });
 
   app.get(api.dictionary.saved.get.path, async (req, res) => {
@@ -136,98 +119,31 @@ export async function registerRoutes(
   });
 
   app.post(api.dictionary.saved.create.path, async (req, res) => {
-    try {
-      const input = api.dictionary.saved.create.input.parse(req.body);
-      const word = normalizeWord(input.word);
-      const saved = await storage.saveWord({ ...input, word });
-      res.status(201).json(saved);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({
-          message: err.errors[0]?.message ?? "Invalid request",
-          field: err.errors[0]?.path?.join("."),
-        });
-      }
-      throw err;
-    }
+    const input = api.dictionary.saved.create.input.parse(req.body);
+    res.status(201).json(await storage.saveWord(input));
   });
 
   app.delete(api.dictionary.saved.delete.path, async (req, res) => {
-    const word = normalizeWord(String(req.params.word || ""));
-    const existing = await storage.getSavedWord(word);
-    if (!existing) return res.status(404).json({ message: "Word not found" });
-    await storage.deleteSavedWord(word);
+    await storage.deleteSavedWord(normalizeWord(req.params.word));
     res.status(204).send();
   });
 
   app.get(api.dictionary.history.list.path, async (req, res) => {
-    const input = api.dictionary.history.list.input?.parse(req.query);
-    const limit = input?.limit ?? 5;
-    const items = await storage.getSearchHistory(limit);
-    res.json(
-      items.map((x) => ({
-        id: x.id,
-        word: x.word,
-        searchedAt: x.searchedAt.toISOString(),
-      }))
-    );
+    const limit = Number(req.query.limit) || 5;
+    res.json(await storage.getSearchHistory(limit));
   });
 
   app.post(api.dictionary.tts.speak.path, async (req, res) => {
-    try {
-      const input = api.dictionary.tts.speak.input.parse(req.body);
-      const text = input.text.trim();
-
-      const resp = await openai.chat.completions.create({
-        model: "gpt-audio",
-        modalities: ["text", "audio"],
-        audio: { voice: "alloy", format: "mp3" },
-        messages: [
-          {
-            role: "system",
-            content: "You perform text-to-speech. Repeat the provided text verbatim.",
-          },
-          { role: "user", content: `Repeat the following text verbatim: ${text}` },
-        ],
-      } as any);
-
-      const msg: any = resp.choices?.[0]?.message;
-      const audioBase64 = msg?.audio?.data ?? "";
-      if (!audioBase64) {
-        return res.status(500).json({ message: "Failed to synthesize audio" });
-      }
-
-      res.json({ audioBase64, contentType: "audio/mpeg" });
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({
-          message: err.errors[0]?.message ?? "Invalid request",
-          field: err.errors[0]?.path?.join("."),
-        });
-      }
-      throw err;
-    }
+    const input = api.dictionary.tts.speak.input.parse(req.body);
+    const resp = await openai.chat.completions.create({
+      model: "gpt-audio",
+      modalities: ["text", "audio"],
+      audio: { voice: "alloy", format: "mp3" },
+      messages: [{ role: "user", content: input.text }],
+    } as any);
+    const audioBase64 = (resp.choices?.[0]?.message as any)?.audio?.data || "";
+    res.json({ audioBase64, contentType: "audio/mpeg" });
   });
-
-  await seedDatabase();
 
   return httpServer;
-}
-
-async function seedDatabase() {
-  const existing = await storage.getSavedWords();
-  if (existing.length > 0) return;
-
-  await storage.saveWord({
-    word: "serendipity",
-    ipa: "/ˌsɛr.ənˈdɪp.ɪ.ti/",
-    partOfSpeech: "noun",
-    definition: "The occurrence of events by chance in a happy or beneficial way.",
-    example: "Finding that quiet cafe was pure serendipity.",
-    synonyms: "fluke, chance, fortuity",
-    antonyms: "misfortune",
-    usageTips: "Use it to describe unexpectedly good luck, especially discoveries.",
-    origin: "Mid 18th century: from Serendip, a former name for Sri Lanka.",
-    translation: "नसीब",
-  });
 }
