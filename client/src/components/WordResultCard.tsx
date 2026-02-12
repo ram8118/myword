@@ -1,257 +1,156 @@
-import { useMemo, useState } from "react";
-import { BookmarkPlus, Check, Sparkles, Volume2 } from "lucide-react";
-import GlassCard from "@/components/GlassCard";
+import { Volume2, Bookmark, Check } from "lucide-react";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Word } from "@shared/schema";
 import { cn } from "@/lib/utils";
-import type { WordResponse } from "@shared/routes";
 
-export default function WordResultCard({
-  word,
-  fromCache,
-  onSave,
-  savePending,
-  isSaved,
-  onPronounce,
-  pronouncePending,
-  accentLabel,
-  "data-testid": testId,
-}: {
-  word: WordResponse;
+interface WordResultCardProps {
+  word: Word;
   fromCache?: boolean;
   onSave: () => void;
   savePending?: boolean;
   isSaved?: boolean;
   onPronounce: () => void;
   pronouncePending?: boolean;
+  className?: string;
   accentLabel?: string;
-  "data-testid"?: string;
-}) {
-  const [synOpen, setSynOpen] = useState(false);
-  const [antOpen, setAntOpen] = useState(false);
+}
 
-  const synonyms = useMemo(
-    () => word.synonyms.split(",").map((s) => s.trim()).filter(Boolean),
-    [word.synonyms],
-  );
-  const antonyms = useMemo(
-    () => word.antonyms.split(",").map((s) => s.trim()).filter(Boolean),
-    [word.antonyms],
-  );
-
+export default function WordResultCard({
+  word,
+  onSave,
+  savePending,
+  isSaved,
+  onPronounce,
+  pronouncePending,
+  className,
+}: WordResultCardProps) {
   return (
-    <GlassCard data-testid={testId} className="overflow-hidden">
-      <div className="p-6 sm:p-7">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
-                {word.word}
-              </h2>
-              {fromCache !== undefined ? (
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold",
-                    fromCache
-                      ? "border-primary/25 bg-primary/10 text-foreground"
-                      : "border-accent/25 bg-accent/12 text-foreground",
-                  )}
-                  data-testid="lookup-cache-badge"
-                  title={fromCache ? "Served from saved cache" : "Fresh AI result"}
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  {fromCache ? "Cached" : "AI"}
-                </span>
-              ) : null}
-              {accentLabel ? (
-                <span
-                  className="inline-flex items-center rounded-full border border-border/60 bg-card/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground"
-                  data-testid="accent-label"
-                >
-                  {accentLabel}
-                </span>
-              ) : null}
-            </div>
-
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-              {word.ipa ? (
-                <span className="font-semibold text-muted-foreground" data-testid="word-ipa">
-                  /{word.ipa}/
-                </span>
-              ) : (
-                <span className="text-muted-foreground" data-testid="word-ipa-empty">
-                  IPA unavailable
-                </span>
-              )}
-              {word.partOfSpeech ? (
-                <span
-                  className="inline-flex items-center rounded-full border border-border/60 bg-muted/60 px-2.5 py-1 text-xs font-semibold text-foreground"
-                  data-testid="word-pos"
-                >
-                  {word.partOfSpeech}
-                </span>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:pt-1">
-            <button
-              onClick={onPronounce}
-              data-testid="btn-pronounce"
-              className={cn(
-                "inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold",
-                "bg-card/60 backdrop-blur-xl soft-shadow",
-                "border-border/70 text-foreground",
-                "hover:-translate-y-0.5 hover:soft-shadow-lg hover:bg-card",
-                "active:translate-y-0 active:soft-shadow",
-                "transition-all duration-200 ease-out ring-focus",
-                pronouncePending ? "opacity-70 cursor-wait" : "",
-              )}
-              disabled={pronouncePending}
-              aria-label="Pronounce"
-            >
-              <Volume2 className="h-4 w-4 text-primary" />
-              {pronouncePending ? "Speaking…" : "Pronounce"}
-            </button>
-
-            <button
-              onClick={onSave}
-              data-testid="btn-save"
-              className={cn(
-                "inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold",
-                "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground",
-                "shadow-lg shadow-primary/25",
-                "hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5",
-                "active:translate-y-0 active:shadow-md",
-                "transition-all duration-200 ease-out ring-focus",
-                (savePending || isSaved) ? "opacity-80" : "",
-              )}
-              disabled={savePending || isSaved}
-              aria-label="Save word"
-            >
-              {isSaved ? <Check className="h-4 w-4" /> : <BookmarkPlus className="h-4 w-4" />}
-              {isSaved ? "Saved" : savePending ? "Saving…" : "Save"}
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-5">
-          <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-muted/60 via-card/50 to-accent/10 p-5">
-            <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Definition</div>
-            <p className="mt-2 text-base leading-relaxed text-foreground" data-testid="word-definition">
-              {word.definition}
-            </p>
-          </section>
-
-          <section className="rounded-2xl border border-border/60 bg-card/50 p-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Example</div>
-            </div>
-            {word.example ? (
-              <blockquote
-                className="mt-2 rounded-2xl border border-border/60 bg-muted/50 px-4 py-3 text-sm italic leading-relaxed text-foreground"
-                data-testid="word-example"
+    <Card className={cn("border-none shadow-none bg-background text-foreground", className)} data-testid="card-dictionary-result">
+      <CardHeader className="px-0 pb-2">
+        <div className="flex items-center gap-4">
+          <Button
+            size="icon"
+            variant="outline"
+            className="rounded-full h-12 w-12 bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-colors"
+            onClick={onPronounce}
+            disabled={pronouncePending}
+            data-testid="button-pronounce"
+          >
+            <Volume2 className={cn("h-6 w-6", pronouncePending && "animate-pulse")} />
+          </Button>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <h2 className="text-4xl font-medium tracking-tight" data-testid="text-word-title">{word.word}</h2>
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn("h-8 w-8 text-muted-foreground hover:text-primary", isSaved && "text-primary")}
+                onClick={onSave}
+                disabled={savePending}
+                data-testid="button-save-word"
               >
-                “{word.example}”
-              </blockquote>
-            ) : (
-              <p className="mt-2 text-sm text-muted-foreground" data-testid="word-example-empty">
-                No example provided.
-              </p>
-            )}
-          </section>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <section className="rounded-2xl border border-border/60 bg-card/50 p-5">
-              <div className="flex items-center justify-between">
-                <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Synonyms</div>
-                <button
-                  onClick={() => setSynOpen((v) => !v)}
-                  data-testid="toggle-synonyms"
-                  className="rounded-xl border border-border/60 bg-muted/50 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors ring-focus"
-                >
-                  {synOpen ? "Collapse" : "Expand"}
-                </button>
-              </div>
-
-              {synonyms.length ? (
-                <div
-                  className={cn("mt-3 flex flex-wrap gap-2", synOpen ? "" : "max-h-16 overflow-hidden")}
-                  data-testid="word-synonyms"
-                >
-                  {synonyms.map((s) => (
-                    <span
-                      key={s}
-                      className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-foreground"
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-3 text-sm text-muted-foreground" data-testid="word-synonyms-empty">
-                  None listed.
-                </p>
-              )}
-            </section>
-
-            <section className="rounded-2xl border border-border/60 bg-card/50 p-5">
-              <div className="flex items-center justify-between">
-                <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Antonyms</div>
-                <button
-                  onClick={() => setAntOpen((v) => !v)}
-                  data-testid="toggle-antonyms"
-                  className="rounded-xl border border-border/60 bg-muted/50 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors ring-focus"
-                >
-                  {antOpen ? "Collapse" : "Expand"}
-                </button>
-              </div>
-
-              {antonyms.length ? (
-                <div
-                  className={cn("mt-3 flex flex-wrap gap-2", antOpen ? "" : "max-h-16 overflow-hidden")}
-                  data-testid="word-antonyms"
-                >
-                  {antonyms.map((s) => (
-                    <span
-                      key={s}
-                      className="inline-flex items-center rounded-full border border-accent/25 bg-accent/12 px-2.5 py-1 text-xs font-semibold text-foreground"
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-3 text-sm text-muted-foreground" data-testid="word-antonyms-empty">
-                  None listed.
-                </p>
-              )}
-            </section>
+                {isSaved ? <Check className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+              </Button>
+            </div>
+            <p className="text-lg text-primary/80 font-mono mt-1" data-testid="text-word-ipa">{word.ipa}</p>
           </div>
-
-          <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-card/60 via-card/40 to-primary/10 p-5">
-            <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Usage tips</div>
-            {word.usageTips ? (
-              <p className="mt-2 text-sm leading-relaxed text-foreground" data-testid="word-usage-tips">
-                {word.usageTips}
-              </p>
-            ) : (
-              <p className="mt-2 text-sm text-muted-foreground" data-testid="word-usage-tips-empty">
-                No usage tips provided.
-              </p>
-            )}
-          </section>
-        </div>
-      </div>
-
-      <div className="border-t border-border/60 bg-muted/30 px-6 py-4">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-xs text-muted-foreground">
-            Generated <span className="font-semibold text-foreground">just for you</span> — double-check nuance for formal writing.
-          </div>
-          <div className="text-xs text-muted-foreground" data-testid="word-timestamp">
-            Updated: {word.timestamp ? new Date(word.timestamp as any).toLocaleString() : "—"}
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Translate to</span>
+            <Select defaultValue="hindi">
+              <SelectTrigger className="w-[120px] bg-secondary/50 border-none h-8 text-xs">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hindi">Hindi</SelectItem>
+                <SelectItem value="kannada">Kannada</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
-      </div>
-    </GlassCard>
+      </CardHeader>
+      <CardContent className="px-0">
+        <Tabs defaultValue="overview" className="w-full mt-4">
+          <TabsList className="bg-transparent border-b rounded-none w-full justify-start h-auto p-0 gap-6">
+            <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0 pb-2 text-sm font-medium">Overview</TabsTrigger>
+            <TabsTrigger value="usage" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0 pb-2 text-sm font-medium">Usage examples</TabsTrigger>
+            <TabsTrigger value="similar" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0 pb-2 text-sm font-medium">Similar and opposite words</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="pt-6 space-y-6">
+            <div className="space-y-2">
+              <div className="text-primary font-medium italic text-sm">{word.partOfSpeech}</div>
+              <div className="text-lg leading-relaxed">{word.definition}</div>
+              {word.example && (
+                <div className="text-muted-foreground italic pl-4 border-l-2 border-primary/20">
+                  "{word.example}"
+                </div>
+              )}
+            </div>
+
+            {word.translation && (
+              <div className="pt-4 border-t border-border/50">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Translation</div>
+                <div className="text-xl font-medium">{word.translation}</div>
+              </div>
+            )}
+
+            {word.origin && (
+              <div className="pt-4 border-t border-border/50">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground mb-4">Origin</div>
+                <div className="flex items-center gap-4 overflow-x-auto pb-2">
+                   <div className="flex items-center gap-2 whitespace-nowrap">
+                     <Badge variant="outline" className="px-3 py-1 bg-secondary/30">HISTORY</Badge>
+                     <span className="text-muted-foreground">→</span>
+                     <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">CURRENT</Badge>
+                   </div>
+                </div>
+                <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{word.origin}</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="usage" className="pt-6">
+             <div className="space-y-4">
+               <p className="text-sm text-muted-foreground">How to use "{word.word}" in sentences:</p>
+               <ul className="space-y-3 list-disc pl-5">
+                 <li className="text-foreground leading-relaxed italic">{word.example}</li>
+                 {word.usageTips && <li className="text-foreground leading-relaxed">{word.usageTips}</li>}
+               </ul>
+             </div>
+          </TabsContent>
+
+          <TabsContent value="similar" className="pt-6 space-y-8">
+            {word.synonyms && (
+              <div>
+                <h4 className="text-sm font-medium mb-4 text-muted-foreground">Similar:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {word.synonyms.split(",").map((s) => (
+                    <Badge key={s} variant="outline" className="rounded-full px-4 py-1 hover:bg-secondary transition-colors cursor-pointer border-border/50">
+                      {s.trim()}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {word.antonyms && (
+              <div>
+                <h4 className="text-sm font-medium mb-4 text-muted-foreground">Opposite:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {word.antonyms.split(",").map((a) => (
+                    <Badge key={a} variant="outline" className="rounded-full px-4 py-1 hover:bg-secondary transition-colors cursor-pointer border-border/50">
+                      {a.trim()}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }
