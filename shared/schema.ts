@@ -11,7 +11,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // ======================================================
-// USERS (kept from template; not used by this app's UI)
+// USERS
 // ======================================================
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -28,7 +28,7 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // ======================================================
-// CHAT TABLES (added by AI integration; harmless if unused)
+// CHAT TABLES
 // ======================================================
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
@@ -74,6 +74,8 @@ export const words = pgTable("words", {
   synonyms: text("synonyms").notNull().default(""),
   antonyms: text("antonyms").notNull().default(""),
   usageTips: text("usage_tips").notNull().default(""),
+  origin: text("origin").notNull().default(""),
+  translation: text("translation").notNull().default(""),
   timestamp: timestamp("timestamp").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
