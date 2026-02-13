@@ -32,7 +32,10 @@ export default function Saved() {
     const list = saved.data ?? [];
     const query = q.trim().toLowerCase();
     if (!query) return list;
-    return list.filter((w) => w.word.toLowerCase().includes(query) || w.definition.toLowerCase().includes(query));
+    return list.filter((w) => {
+      const firstDef = ((w.meanings as any[])?.[0]?.definitions?.[0]?.definition || "") as string;
+      return w.word.toLowerCase().includes(query) || firstDef.toLowerCase().includes(query);
+    });
   }, [q, saved.data]);
 
   async function confirmDelete(word: string) {
@@ -192,7 +195,7 @@ export default function Saved() {
                       {w.word}
                     </Link>
                     <div className="mt-2 line-clamp-3 text-sm text-muted-foreground" data-testid={`saved-def-${w.word}`}>
-                      {w.definition}
+                      {((w.meanings as any[])?.[0]?.definitions?.[0]?.definition) || "No definition"}
                     </div>
                   </div>
 
@@ -249,7 +252,7 @@ export default function Saved() {
 
                 <div className="mt-4 flex items-center justify-between gap-2">
                   <div className="text-xs text-muted-foreground" data-testid={`saved-meta-${w.word}`}>
-                    {w.partOfSpeech ? <span className="font-semibold text-foreground">{w.partOfSpeech}</span> : "—"}
+                    {(w.meanings as any[])?.[0]?.partOfSpeech ? <span className="font-semibold text-foreground">{(w.meanings as any[])[0].partOfSpeech}</span> : "—"}
                     {w.ipa ? <span className="ml-2">/{w.ipa}/</span> : null}
                   </div>
                   <Link

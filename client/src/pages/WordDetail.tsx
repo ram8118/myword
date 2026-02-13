@@ -28,7 +28,7 @@ export default function WordDetail() {
 
   async function handleSave() {
     if (!savedWord.data) return;
-    save.mutate(savedWord.data, {
+    save.mutate(savedWord.data as any, {
       onSuccess: () => toast({ title: "Saved", description: `“${savedWord.data!.word}” is in your Saved list.` }),
       onError: (e) =>
         toast({
@@ -163,13 +163,11 @@ export default function WordDetail() {
             <WordResultCard
               data-testid="detail-word-card"
               word={savedWord.data}
-              fromCache={true}
               onSave={handleSave}
               savePending={save.isPending}
               isSaved={isSaved}
               onPronounce={handlePronounce}
               pronouncePending={speak.isPending}
-              accentLabel="Saved entry"
             />
 
             {ttsPayload ? (

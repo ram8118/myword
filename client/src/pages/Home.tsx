@@ -75,11 +75,11 @@ export default function Home() {
   async function handleSave() {
     if (!activeResult) return;
 
-    saveWord.mutate(activeResult, {
+    saveWord.mutate(activeResult as any, {
       onSuccess: () => {
         toast({
           title: "Saved",
-          description: `“${activeResult.word}” is now in your Saved list.`,
+          description: `“${activeResult?.word}” is now in your Saved list.`,
         });
       },
       onError: (e) => {
@@ -249,7 +249,6 @@ export default function Home() {
               <WordResultCard
                 data-testid="word-result-card"
                 word={lookup.data.result}
-                fromCache={lookup.data.fromCache}
                 onSave={handleSave}
                 savePending={saveWord.isPending}
                 isSaved={savedSet.has(lookup.data.result.word.toLowerCase())}
@@ -262,7 +261,7 @@ export default function Home() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-sm font-bold text-foreground">Pronunciation audio</div>
-                      <div className="text-xs text-muted-foreground">For “{activeResult.word}”.</div>
+                      <div className="text-xs text-muted-foreground">For “{activeResult?.word}”.</div>
                     </div>
                     <button
                       onClick={() => setTtsPayload(null)}
@@ -420,7 +419,7 @@ export default function Home() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="truncate text-sm font-bold text-foreground">{w.word}</div>
-                          <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{w.definition}</div>
+                          <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{((w.meanings as any[])?.[0]?.definitions?.[0]?.definition) || w.ipa || "Saved word"}</div>
                         </div>
                         <span className="rounded-xl border border-border/60 bg-muted/50 px-2 py-1 text-[11px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
                           View
