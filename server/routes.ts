@@ -53,7 +53,7 @@ async function aiLookup(word: string) {
       {
         role: "system",
         content:
-          "You are a professional lexicographer. Return exhaustive, deeply structured JSON mirroring Google's Search Dictionary exactly. Do not skip any meanings. Use nested sub-definitions and specific part-of-speech forms. Include origin flow and common phrases.",
+          "You are a professional lexicographer. Return exhaustive, deeply structured JSON mirroring Google's Search Dictionary exactly. Do not skip any meanings. Use nested sub-definitions for variant meanings of the same sense. Use numbering (1., 2., 3.) for distinct senses. Include full part-of-speech forms (e.g., plural noun, verb conjugations).",
       },
       { role: "user", content: prompt },
     ],

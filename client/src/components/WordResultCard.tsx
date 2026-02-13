@@ -121,16 +121,16 @@ export default function WordResultCard({
                           )}
 
                           {d.subs && d.subs.map((s: any, sIdx: number) => (
-                            <div key={sIdx} className="flex gap-4 items-start pl-2 mt-4">
-                              <span className="text-muted-foreground text-lg leading-none pt-2">•</span>
+                            <div key={sIdx} className="flex gap-4 items-start pl-6 mt-4">
+                              <span className="text-muted-foreground text-xl leading-none pt-1">•</span>
                               <div className="flex-1 space-y-2">
-                                <div className="text-base text-foreground/90 font-medium">{s.definition}</div>
-                                {s.example && <div className="text-sm text-muted-foreground italic">"{s.example}"</div>}
+                                <div className="text-lg text-foreground font-medium">{s.definition}</div>
+                                {s.example && <div className="text-base text-muted-foreground italic">"{s.example}"</div>}
                                 {s.synonyms && s.synonyms.length > 0 && (
-                                  <div className="flex items-center gap-2 flex-wrap pt-1">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Similar:</span>
+                                  <div className="flex items-center gap-2 flex-wrap pt-2">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Similar:</span>
                                     {s.synonyms.map((ss: string) => (
-                                      <Badge key={ss} variant="outline" className="rounded-full px-3 py-0.5 text-[10px] bg-secondary/10 border-border/50">{ss}</Badge>
+                                      <Badge key={ss} variant="outline" className="rounded-full px-4 py-0.5 text-xs bg-secondary/10 border-border/50">{ss}</Badge>
                                     ))}
                                   </div>
                                 )}
