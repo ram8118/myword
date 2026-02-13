@@ -52,17 +52,17 @@ async function aiLookup(word: string) {
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5.2",
+    model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
         content:
-          "You are a professional lexicographer. Return comprehensive, deeply structured JSON mirroring Google's Search Dictionary. Support multiple parts of speech and complex numbering (1, 2, 3) with bulleted sub-definitions. Include many synonyms/antonyms for each part of speech.",
+          "You are a fast, professional lexicographer. Return concise, deeply structured JSON mirroring Google's Search Dictionary. Support multiple parts of speech and complex numbering. Focus on accuracy and speed.",
       },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
-    max_completion_tokens: 3000,
+    max_completion_tokens: 1500,
   } as any);
 
   return JSON.parse(response.choices?.[0]?.message?.content ?? "{}");
