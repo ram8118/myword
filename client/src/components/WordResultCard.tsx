@@ -94,27 +94,46 @@ export default function WordResultCard({
             <TabsTrigger value="similar" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0 pb-2 text-sm font-medium">Similar and opposite words</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="pt-6 space-y-8">
+          <TabsContent value="overview" className="pt-6 space-y-10">
             {meanings.map((m, idx) => (
               <div key={idx} className="space-y-4">
                 <div className="text-primary font-medium italic text-sm">{m.partOfSpeech}</div>
-                <div className="space-y-6">
+                {m.forms && <div className="text-muted-foreground text-sm font-medium">{m.forms}</div>}
+                
+                <div className="space-y-10">
                   {m.definitions.map((d: any, dIdx: number) => (
-                    <div key={dIdx} className="space-y-2">
-                      <div className="flex gap-3">
-                        <span className="text-muted-foreground font-medium">{dIdx + 1}.</span>
-                        <div className="flex-1 space-y-2">
+                    <div key={dIdx} className="space-y-4">
+                      <div className="flex gap-4 items-start">
+                        <span className="text-muted-foreground font-medium min-w-[1.5rem] pt-0.5">{dIdx + 1}.</span>
+                        <div className="flex-1 space-y-3">
                           <div className="text-lg leading-relaxed">{d.definition}</div>
                           {d.example && (
                             <div className="text-muted-foreground italic">"{d.example}"</div>
                           )}
                           
+                          {d.synonyms && d.synonyms.length > 0 && (
+                            <div className="flex items-center gap-2 flex-wrap pt-1">
+                              <span className="text-xs font-medium text-muted-foreground">Similar:</span>
+                              {d.synonyms.map((s: string) => (
+                                <Badge key={s} variant="outline" className="rounded-full px-4 py-0.5 text-xs bg-secondary/20 border-border/50">{s}</Badge>
+                              ))}
+                            </div>
+                          )}
+
                           {d.subs && d.subs.map((s: any, sIdx: number) => (
-                            <div key={sIdx} className="flex gap-3 ml-4 mt-2">
-                              <span className="text-muted-foreground">•</span>
-                              <div className="flex-1 space-y-1">
-                                <div className="text-sm text-foreground/90">{s.definition}</div>
-                                {s.example && <div className="text-xs text-muted-foreground italic">"{s.example}"</div>}
+                            <div key={sIdx} className="flex gap-4 items-start pl-2 mt-4">
+                              <span className="text-muted-foreground text-lg leading-none pt-2">•</span>
+                              <div className="flex-1 space-y-2">
+                                <div className="text-base text-foreground/90 font-medium">{s.definition}</div>
+                                {s.example && <div className="text-sm text-muted-foreground italic">"{s.example}"</div>}
+                                {s.synonyms && s.synonyms.length > 0 && (
+                                  <div className="flex items-center gap-2 flex-wrap pt-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Similar:</span>
+                                    {s.synonyms.map((ss: string) => (
+                                      <Badge key={ss} variant="outline" className="rounded-full px-3 py-0.5 text-[10px] bg-secondary/10 border-border/50">{ss}</Badge>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ))}

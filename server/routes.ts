@@ -16,39 +16,35 @@ function normalizeWord(input: string) {
 
 async function aiLookup(word: string) {
   const prompt =
-    `Return JSON only. Format like Google Search dictionary for "${word}". Deeply nested.\n` +
-    `Structure:\n` +
+    `Return JSON only. Format strictly like Google Search dictionary for "${word}".\n` +
+    `Ensure every part of speech is listed. Use specific numbering (1., 2., 3.) for main definitions.\n` +
+    `Use sub-points (dot points) for related definitions under a main number.\n` +
+    `Include plurality for nouns (e.g., "noun: scoop; plural noun: scoops").\n` +
+    `Include verb forms (e.g., "verb: scoop; 3rd person present: scoops...").\n` +
+    `Include "Similar" chips for BOTH main definitions AND sub-definitions where applicable.\n` +
+    `Include "Origin" with text and a flow array (e.g., ["MIDDLE DUTCH", "MIDDLE LOW GERMAN", "ENGLISH"]).\n` +
+    `Include "Phrases" section if common.\n` +
+    `Example Structure:\n` +
     `{
-  "word": "at",
-  "ipa": "/æt,ət/",
+  "word": "scoop",
+  "ipa": "/skuːp/",
   "meanings": [
     {
-      "partOfSpeech": "preposition",
+      "partOfSpeech": "noun",
+      "forms": "noun: scoop; plural noun: scoops",
       "definitions": [
         {
-          "definition": "expressing location or arrival in a particular place or position.",
-          "example": "they live at Conway House",
+          "definition": "a utensil resembling a spoon...",
+          "example": "the powder is packed in tubs...",
+          "synonyms": ["spoon", "ladle"],
           "subs": [
-            { "definition": "used in speech to indicate the sign @ in email addresses...", "example": "john@example.com" }
+            { "definition": "a short-handled deep shovel...", "example": "..." },
+            { "definition": "a moving bowl-shaped part...", "example": "..." }
           ]
-        },
-        { "definition": "expressing the time when an event takes place.", "example": "the children go to bed at nine o'clock" }
-      ],
-      "synonyms": ["near", "by", "on"],
-      "antonyms": []
+        }
+      ]
     }
-  ],
-  "phrases": [
-    { "phrase": "at that", "meaning": "in addition; furthermore.", "example": "it was not fog but smoke, and very thick at that" }
-  ],
-  "originDetails": {
-    "text": "Old English æt, of Germanic origin...",
-    "flow": ["GERMANIC", "OLD ENGLISH æt", "OLD FRISIAN et", "OLD NORSE at"]
-  },
-  "translation": {
-    "primary": "पर",
-    "others": ["बलि", "ಮೇಲೆ", "ಅಲ್ಲಿ"]
-  }
+  ]
 }`;
 
   const response = await openai.chat.completions.create({
@@ -57,12 +53,12 @@ async function aiLookup(word: string) {
       {
         role: "system",
         content:
-          "You are a fast, professional lexicographer. Return concise, deeply structured JSON mirroring Google's Search Dictionary. Support multiple parts of speech and complex numbering. Focus on accuracy and speed.",
+          "You are a professional lexicographer. Return exhaustive, deeply structured JSON mirroring Google's Search Dictionary exactly. Do not skip any meanings. Use nested sub-definitions and specific part-of-speech forms. Include origin flow and common phrases.",
       },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
-    max_completion_tokens: 1500,
+    max_completion_tokens: 2500,
   } as any);
 
   return JSON.parse(response.choices?.[0]?.message?.content ?? "{}");
