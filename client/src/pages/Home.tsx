@@ -6,7 +6,6 @@ import GlassCard from "@/components/GlassCard";
 import WordResultCard from "@/components/WordResultCard";
 import LoadingCard from "@/components/LoadingCard";
 import EmptyState from "@/components/EmptyState";
-import AudioPlayer from "@/components/AudioPlayer";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
@@ -21,7 +20,6 @@ export default function Home() {
   const { toast } = useToast();
   const [query, setQuery] = useState("");
   const [lastWord, setLastWord] = useState<string>("");
-  const [ttsPayload, setTtsPayload] = useState<{ audioBase64: string; contentType: string } | null>(null);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -36,7 +34,6 @@ export default function Home() {
   const activeResult = lookup.data?.result;
 
   useEffect(() => {
-    // focus search on first load
     const t = setTimeout(() => inputRef.current?.focus(), 250);
     return () => clearTimeout(t);
   }, []);
@@ -45,7 +42,6 @@ export default function Home() {
     const word = wordRaw.trim();
     if (!word) return;
 
-    setTtsPayload(null);
     setLastWord(word);
 
     lookup.mutate(
@@ -53,7 +49,7 @@ export default function Home() {
       {
         onError: (e) => {
           toast({
-            title: "Couldn’t look that up",
+            title: "Couldn't look that up",
             description: e instanceof Error ? e.message : "Unknown error",
             variant: "destructive",
           });
@@ -79,12 +75,12 @@ export default function Home() {
       onSuccess: () => {
         toast({
           title: "Saved",
-          description: `“${activeResult?.word}” is now in your Saved list.`,
+          description: `"${activeResult?.word}" is now in your Saved list.`,
         });
       },
       onError: (e) => {
         toast({
-          title: "Couldn’t save",
+          title: "Couldn't save",
           description: e instanceof Error ? e.message : "Unknown error",
           variant: "destructive",
         });
@@ -96,21 +92,18 @@ export default function Home() {
     const target = activeResult?.word || lastWord || query.trim();
     if (!target) return;
 
-    setTtsPayload(null);
-
     speak.mutate(
       { text: target },
       {
-        onSuccess: (data) => {
-          setTtsPayload(data);
+        onSuccess: () => {
           toast({
             title: "Pronouncing",
-            description: "Audio is ready—press play if it doesn’t start automatically.",
+            description: `Playing pronunciation for "${target}".`,
           });
         },
         onError: (e) => {
           toast({
-            title: "Couldn’t generate audio",
+            title: "Couldn't generate audio",
             description: e instanceof Error ? e.message : "Unknown error",
             variant: "destructive",
           });
@@ -122,7 +115,7 @@ export default function Home() {
   return (
     <>
       <Seo
-        title="AI English Dictionary — Look up & learn"
+        title="AI English Dictionary - Look up & learn"
         description="A modern AI-powered English dictionary. Search words, get definitions, examples, synonyms, antonyms, and usage tips. Save words and revisit anytime."
       />
 
@@ -155,7 +148,7 @@ export default function Home() {
                   ref={inputRef}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search a word (e.g., ‘serendipity’)"
+                  placeholder="Search a word (e.g., 'serendipity')"
                   data-testid="search-input"
                   className={cn(
                     "w-full rounded-2xl border-2 border-border bg-background/60 px-11 py-3.5",
@@ -174,7 +167,6 @@ export default function Home() {
 
               <button
                 type="submit"
-                onClick={() => {}}
                 data-testid="search-button"
                 className={cn(
                   "inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-bold",
@@ -187,7 +179,7 @@ export default function Home() {
                 )}
                 disabled={lookup.isPending || !query.trim()}
               >
-                {lookup.isPending ? "Searching…" : "Search"}
+                {lookup.isPending ? "Searching..." : "Search"}
               </button>
 
               <button
@@ -207,17 +199,17 @@ export default function Home() {
                 <span className="grid h-7 w-7 place-items-center rounded-xl bg-gradient-to-br from-primary/15 via-card to-accent/15 border border-border/60">
                   <BookOpen className="h-4 w-4 text-primary" />
                 </span>
-                {speak.isPending ? "Preparing…" : "Pronounce"}
+                {speak.isPending ? "Preparing..." : "Pronounce"}
               </button>
             </form>
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
               <div data-testid="search-hint">
-                Tip: Try phrases like <span className="font-semibold text-foreground">“by and large”</span> or{" "}
-                <span className="font-semibold text-foreground">“on the fence”</span>.
+                Tip: Try phrases like <span className="font-semibold text-foreground">"by and large"</span> or{" "}
+                <span className="font-semibold text-foreground">"on the fence"</span>.
               </div>
               <div className="hidden sm:block" data-testid="search-status">
-                {lookup.isPending ? "Thinking…" : lookup.data ? "Ready." : "—"}
+                {lookup.isPending ? "Thinking..." : lookup.data ? "Ready." : "-"}
               </div>
             </div>
           </GlassCard>
@@ -228,7 +220,7 @@ export default function Home() {
             <EmptyState
               data-testid="lookup-error"
               icon={<TriangleAlert className="h-6 w-6 text-destructive" />}
-              title="We couldn’t fetch that definition"
+              title="We couldn't fetch that definition"
               description={(lookup.error as any)?.message ?? "Try again in a moment."}
               actions={
                 <button
@@ -245,49 +237,21 @@ export default function Home() {
               }
             />
           ) : lookup.data?.result ? (
-            <div className="space-y-4">
-              <WordResultCard
-                data-testid="word-result-card"
-                word={lookup.data.result}
-                onSave={handleSave}
-                savePending={saveWord.isPending}
-                isSaved={savedSet.has(lookup.data.result.word.toLowerCase())}
-                onPronounce={handlePronounce}
-                pronouncePending={speak.isPending}
-              />
-
-              {ttsPayload ? (
-                <GlassCard className="p-5" data-testid="tts-card">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-bold text-foreground">Pronunciation audio</div>
-                      <div className="text-xs text-muted-foreground">For “{activeResult?.word}”.</div>
-                    </div>
-                    <button
-                      onClick={() => setTtsPayload(null)}
-                      data-testid="tts-clear"
-                      className="rounded-2xl border border-border/70 bg-card/60 px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-card hover:text-foreground transition-colors ring-focus"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                  <div className="mt-3">
-                    <AudioPlayer
-                      audioBase64={ttsPayload.audioBase64}
-                      contentType={ttsPayload.contentType}
-                      autoPlay
-                      onEnded={() => {}}
-                    />
-                  </div>
-                </GlassCard>
-              ) : null}
-            </div>
+            <WordResultCard
+              data-testid="word-result-card"
+              word={lookup.data.result}
+              onSave={handleSave}
+              savePending={saveWord.isPending}
+              isSaved={savedSet.has(lookup.data.result.word.toLowerCase())}
+              onPronounce={handlePronounce}
+              pronouncePending={speak.isPending}
+            />
           ) : (
             <EmptyState
               data-testid="lookup-empty"
               icon={<Sparkles className="h-6 w-6 text-primary" />}
               title="Start with a word"
-              description="Search anything—single words, expressions, or that perfect adjective you can’t quite remember."
+              description="Search anything - single words, expressions, or that perfect adjective you can't quite remember."
               actions={
                 <button
                   onClick={() => inputRef.current?.focus()}
@@ -325,7 +289,7 @@ export default function Home() {
                 </div>
               ) : history.isError ? (
                 <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4" data-testid="history-error">
-                  <div className="text-sm font-bold text-foreground">Couldn’t load history</div>
+                  <div className="text-sm font-bold text-foreground">Couldn't load history</div>
                   <div className="mt-1 text-xs text-muted-foreground">
                     {(history.error as any)?.message ?? "Try again later."}
                   </div>
@@ -393,7 +357,7 @@ export default function Home() {
                 </div>
               ) : saved.isError ? (
                 <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4" data-testid="saved-preview-error">
-                  <div className="text-sm font-bold text-foreground">Couldn’t load saved list</div>
+                  <div className="text-sm font-bold text-foreground">Couldn't load saved list</div>
                   <div className="mt-1 text-xs text-muted-foreground">
                     {(saved.error as any)?.message ?? "Try again later."}
                   </div>

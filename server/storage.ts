@@ -36,12 +36,10 @@ export class DatabaseStorage implements IStorage {
         target: words.word,
         set: {
           ipa: wordToSave.ipa,
-          partOfSpeech: wordToSave.partOfSpeech,
-          definition: wordToSave.definition,
-          example: wordToSave.example,
-          synonyms: wordToSave.synonyms,
-          antonyms: wordToSave.antonyms,
-          usageTips: wordToSave.usageTips,
+          meanings: wordToSave.meanings,
+          phrases: wordToSave.phrases,
+          originDetails: wordToSave.originDetails,
+          translation: wordToSave.translation,
           timestamp: sql`CURRENT_TIMESTAMP`,
         },
       })

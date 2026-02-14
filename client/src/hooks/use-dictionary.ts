@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import { puterAiLookup, puterTtsSpeak } from "@/lib/puter";
 
 function parseWithLogging<T>(schema: z.ZodSchema<T>, data: unknown, label: string): T {
   const result = schema.safeParse(data);
@@ -15,31 +16,51 @@ export function useLookupWord() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: [api.dictionary.lookup.path],
-    mutationFn: async (input: z.infer<typeof api.dictionary.lookup.input>) => {
-      const validated = api.dictionary.lookup.input.parse(input);
+    mutationKey: ["puter-lookup"],
+    mutationFn: async (input: { word: string }) => {
+      const word = input.word.trim().toLowerCase();
+      if (!word) throw new Error("Word is required");
 
-      const res = await fetch(api.dictionary.lookup.path, {
-        method: api.dictionary.lookup.method,
+      const res = await fetch("/api/search-history", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validated),
+        body: JSON.stringify({ word }),
         credentials: "include",
       });
 
-      if (!res.ok) {
-        if (res.status === 400) {
-          const err = parseWithLogging(api.dictionary.lookup.responses[400], await res.json(), "dictionary.lookup 400");
-          throw new Error(err.message);
-        }
-        if (res.status === 404) {
-          const err = parseWithLogging(api.dictionary.lookup.responses[404], await res.json(), "dictionary.lookup 404");
-          throw new Error(err.message);
-        }
-        throw new Error("Failed to look up word");
+      const cachedRes = await fetch(`/api/words/${encodeURIComponent(word)}`, {
+        credentials: "include",
+      });
+
+      if (cachedRes.ok) {
+        const cached = await cachedRes.json();
+        return { result: cached, fromCache: true };
       }
 
-      const json = await res.json();
-      return parseWithLogging(api.dictionary.lookup.responses[200], json, "dictionary.lookup 200");
+      const aiJson = await puterAiLookup(word);
+
+      const wordData = {
+        word: aiJson.word || word,
+        ipa: aiJson.ipa || "",
+        meanings: aiJson.meanings || [],
+        phrases: aiJson.phrases || [],
+        originDetails: aiJson.originDetails || {},
+        translation: aiJson.translation || {},
+      };
+
+      const saveRes = await fetch("/api/words", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(wordData),
+        credentials: "include",
+      });
+
+      if (!saveRes.ok) {
+        return { result: wordData, fromCache: false };
+      }
+
+      const saved = await saveRes.json();
+      return { result: saved, fromCache: false };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.dictionary.history.list.path] });
@@ -84,25 +105,23 @@ export function useCreateSavedWord() {
 
   return useMutation({
     mutationKey: [api.dictionary.saved.create.path],
-    mutationFn: async (input: z.infer<typeof api.dictionary.saved.create.input>) => {
-      const validated = api.dictionary.saved.create.input.parse(input);
-
+    mutationFn: async (input: any) => {
       const res = await fetch(api.dictionary.saved.create.path, {
         method: api.dictionary.saved.create.method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validated),
+        body: JSON.stringify(input),
         credentials: "include",
       });
 
       if (!res.ok) {
         if (res.status === 400) {
-          const err = parseWithLogging(api.dictionary.saved.create.responses[400], await res.json(), "words.create 400");
+          const err = await res.json();
           throw new Error(err.message);
         }
         throw new Error("Failed to save word");
       }
 
-      return parseWithLogging(api.dictionary.saved.create.responses[201], await res.json(), "words.create 201");
+      return await res.json();
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [api.dictionary.saved.list.path] });
@@ -123,13 +142,12 @@ export function useDeleteSavedWord() {
 
       if (!res.ok) {
         if (res.status === 404) {
-          const err = parseWithLogging(api.dictionary.saved.delete.responses[404], await res.json(), "words.delete 404");
+          const err = await res.json();
           throw new Error(err.message);
         }
         throw new Error("Failed to delete word");
       }
 
-      // 204 no content
       return;
     },
     onSuccess: () => {
@@ -155,26 +173,11 @@ export function useSearchHistory(limit = 5) {
 
 export function useSpeakTts() {
   return useMutation({
-    mutationKey: [api.dictionary.tts.speak.path],
-    mutationFn: async (input: z.infer<typeof api.dictionary.tts.speak.input>) => {
-      const validated = api.dictionary.tts.speak.input.parse(input);
-
-      const res = await fetch(api.dictionary.tts.speak.path, {
-        method: api.dictionary.tts.speak.method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validated),
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        if (res.status === 400) {
-          const err = parseWithLogging(api.dictionary.tts.speak.responses[400], await res.json(), "tts.speak 400");
-          throw new Error(err.message);
-        }
-        throw new Error("Failed to generate speech audio");
-      }
-
-      return parseWithLogging(api.dictionary.tts.speak.responses[200], await res.json(), "tts.speak 200");
+    mutationKey: ["puter-tts"],
+    mutationFn: async (input: { text: string }) => {
+      const audio = await puterTtsSpeak(input.text);
+      audio.play();
+      return { audio };
     },
   });
 }

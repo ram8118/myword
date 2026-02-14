@@ -40,3 +40,8 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_openai_ai_integrations:2.0.0"]
+
+[userenv]
+
+[userenv.shared]
+SUPABASE_DATABASE_URL = "postgresql://postgres:22sG2m%23%3FSWYYWnz@db.tbggnaeqftowxutteshz.supabase.co:5432/postgres"
